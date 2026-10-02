@@ -1,0 +1,48 @@
+name: Developer Build
+
+# Developer যখন main branch-এ code push করবে,
+# তখন এই workflow automatically run হবে।
+on:
+  push:
+    branches:
+      - main
+
+  # GitHub Actions থেকে manually চালানোর সুযোগ
+  workflow_dispatch:
+
+jobs:
+  build:
+    # GitHub একটি temporary Ubuntu machine দেবে
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Developer repository-এর code checkout
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Step 2: Python setup
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Python dependency install
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Step 4: Python code compile/validation
+      - name: Validate Python code
+        run: |
+          python -m compileall app.py
+
+      # Step 5: Flask application basic check
+      - name: Check Flask application
+        run: |
+          python -c "from app import app; print('Flask application loaded successfully')"
+
+      # Build successful হলে message
+      - name: Build completed
+        run: |
+          echo "Developer build completed successfully!"
