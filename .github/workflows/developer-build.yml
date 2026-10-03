@@ -31,12 +31,15 @@ jobs:
           python -m compileall .
           python -c "import flask; print('Flask import successful')"
 
-  vercel-auth:
-    name: Test Vercel Authentication
+  vercel-link:
+    name: Link Vercel Project
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -45,7 +48,8 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Check Vercel Authentication
+      - name: Link Vercel Project
         run: |
-          vercel whoami --token=${{ secrets.VERCEL_TOKEN }}
-    #partial: true
+          vercel link \
+            --yes \
+            --token=${{ secrets.VERCEL_TOKEN }}
