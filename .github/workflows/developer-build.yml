@@ -1,115 +1,86 @@
-name: Developer Build Deploy and Trigger QA
+name: Developer Build and Deploy
 
 on:
-  # Developer main branch-এ code push করলে pipeline শুরু হবে
   push:
     branches:
       - main
 
-  # GitHub থেকে manually চালানোর সুযোগ
   workflow_dispatch:
 
 jobs:
-  # ==========================================================
-  # JOB 1: BUILD
-  # ==========================================================
   build:
+    name: Build Application
     runs-on: ubuntu-latest
 
     steps:
-      # Developer repository checkout
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # Python setup
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      # Python dependencies install
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Python syntax validation
-      - name: Validate Python code
+      - name: Validate Python application
         run: |
-          python -m compileall app.py
+          python -m compileall .
+          python -c "import flask; print('Flask import successful')"
 
-      # Flask application load test
-      - name: Validate Flask application
-        run: |
-          python -c "from app import app; print('Flask application loaded successfully')"
-
-  # ==========================================================
-  # JOB 2: DEPLOY TO VERCEL
-  # ==========================================================
   deploy:
-    # Build successful না হলে deploy হবে না
+    name: Deploy to Vercel
     needs: build
-
     runs-on: ubuntu-latest
 
     steps:
-      # Repository checkout
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # Node.js setup
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # Vercel CLI install
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      # Vercel production deployment
-      - name: Deploy to Vercel
+      - name: Pull Vercel project
         run: |
           vercel pull \
             --yes \
             --environment=production \
             --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Build Vercel application
+        run: |
           vercel build \
             --prod \
             --token=${{ secrets.VERCEL_TOKEN }}
 
+      - name: Deploy to Vercel
+        run: |
           vercel deploy \
             --prebuilt \
             --prod \
             --token=${{ secrets.VERCEL_TOKEN }}
 
-  # ==========================================================
-  # JOB 3: TRIGGER QA REPOSITORY
-  # ==========================================================
   trigger-qa:
-    # Build + Vercel deployment দুটো successful হলে QA শুরু হবে
-    needs:
-      - build
-      - deploy
-
+    name: Trigger QA Automation
+    needs: deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger QA Automation Repository
+      - name: Trigger QA repository
         uses: peter-evans/repository-dispatch@v4
         with:
-          # QA repository access token
           token: ${{ secrets.QA_REPO_TOKEN }}
-
-          # তোমার QA repository
-          repository: YOUR_GITHUB_USERNAME/qa-automation-repo
-
-          # QA workflow এই event-এর মাধ্যমে trigger হবে
+          repository: https://github.com/sabbir72/qa-cicd-learning.git
           event-type: run-qa-tests
-
-          # QA-কে প্রয়োজনীয় information পাঠানো হচ্ছে
-          client-payload: >-
+          client-payload: |
             {
               "base_url": "https://developer-demo-app.vercel.app/",
               "source_repo": "${{ github.repository }}",
