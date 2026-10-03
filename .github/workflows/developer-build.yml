@@ -153,73 +153,72 @@ jobs:
   # ==========================================
   # 4. VERCEL DEPLOY
   # ==========================================
-  vercel-deploy:
-    name: Deploy to Vercel
-    needs: vercel-build
-    runs-on: ubuntu-latest
+  # vercel-deploy:
+  #   name: Deploy to Vercel
+  #   needs: vercel-build
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout source code
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "20"
 
-      - name: Install Vercel CLI
-        run: |
-          npm install --global vercel@latest
+  #     - name: Install Vercel CLI
+  #       run: |
+  #         npm install --global vercel@latest
 
-      - name: Pull Vercel Project
-        run: |
-          vercel pull \
-            --yes \
-            --environment=production \
-            --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  #     - name: Pull Vercel Project
+  #       run: |
+  #         vercel pull \
+  #           --yes \
+  #           --environment=production \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
+  #       env:
+  #         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Build Vercel Application
-        run: |
-          vercel build \
-            --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  #     - name: Build Vercel Application
+  #       run: |
+  #         vercel build \
+  #           --prod \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
+  #       env:
+  #         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Deploy to Vercel
-        run: |
-          vercel deploy \
-            --prebuilt \
-            --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  #     - name: Deploy to Vercel
+  #       run: |
+  #         vercel deploy \
+  #           --prebuilt \
+  #           --prod \
+  #           --token=${{ secrets.VERCEL_TOKEN }}
+  #       env:
+  #         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
   # ==========================================
   # 5. TRIGGER QA AUTOMATION
   # ==========================================
-  # trigger-qa:
-  #   name: Trigger QA Automation
-  #   needs: vercel-deploy
-  #   runs-on: ubuntu-latest
+  trigger-qa:
+    name: Trigger QA Automation
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Trigger QA Repository
-  #       uses: peter-evans/repository-dispatch@v4
-  #       with:
-  #         token: ${{ secrets.QA_REPO_TOKEN }}
-  #         repository: sabbir72/qa-cicd-learning
-  #         event-type: run-qa-tests
+    steps:
+      - name: Trigger QA Repository
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ secrets.QA_REPO_TOKEN }}
+          repository: sabbir72/qa-cicd-learning
+          event-type: run-qa-tests
 
-  #         client-payload: |
-  #           {
-  #             "base_url": "https://developer-demo-app.vercel.app/",
-  #             "source_repo": "${{ github.repository }}",
-  #             "commit_sha": "${{ github.sha }}",
-  #             "branch": "${{ github.ref_name }}"
-  #           }
+          client-payload: |
+            {
+              "base_url": "https://developer-demo-app.vercel.app/",
+              "source_repo": "${{ github.repository }}",
+              "commit_sha": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}"
+            }
