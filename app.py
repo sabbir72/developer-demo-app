@@ -1,3 +1,4 @@
+
 from flask import Flask, request, redirect, render_template_string, session
 
 app = Flask(__name__)
@@ -5,79 +6,44 @@ app = Flask(__name__)
 # Session secret key
 app.secret_key = "qa-learning-secret-key"
 
-
-# ==========================================
-# Default Login Credentials
-# ==========================================
-
 DEFAULT_USERNAME = "admin"
 DEFAULT_PASSWORD = "admin123"
 
-
-# ==========================================
-# Product Data
-# ==========================================
-
 PRODUCTS = [
-    {
-        "name": "Laptop",
-        "price": "50,000 BDT"
-    },
-    {
-        "name": "Mouse",
-        "price": "1,000 BDT"
-    },
-    {
-        "name": "Keyboard",
-        "price": "2,000 BDT"
-    }
+    {"name": "Laptop", "price": "50,000 BDT"},
+    {"name": "Mouse", "price": "1,000 BDT"},
+    {"name": "Keyboard", "price": "2,000 BDT"}
 ]
 
 
-# ==========================================
-# Home Page
-# ==========================================
-
 @app.route("/")
 def home():
-
     if "username" in session:
         return redirect("/products")
 
     return """
     <h1>QA Demo Store</h1>
-
     <p>Welcome to the QA Automation Demo Application.</p>
 
     <a href="/login">Login</a>
+    <br><br>
+    <a href="/about">About</a>
     """
 
 
-# ==========================================
-# Login Page
-# ==========================================
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
-
-    # Already logged in
     if "username" in session:
         return redirect("/products")
 
     if request.method == "POST":
-
         username = request.form.get("username")
         password = request.form.get("password")
 
-        # Validate credentials
         if username == DEFAULT_USERNAME and password == DEFAULT_PASSWORD:
-
-            # Create login session
             session["username"] = username
-
             return redirect("/products")
 
-        # Invalid login
         return render_template_string("""
         <h1>Login</h1>
 
@@ -86,13 +52,11 @@ def login():
         </p>
 
         <form method="POST">
-
             <input
                 type="text"
                 name="username"
                 placeholder="Username"
             >
-
             <br><br>
 
             <input
@@ -100,36 +64,24 @@ def login():
                 name="password"
                 placeholder="Password"
             >
-
             <br><br>
 
-            <button type="submit">
-                Login
-            </button>
-
+            <button type="submit">Login</button>
         </form>
 
-        <p>
-            Default Username: admin
-        </p>
-
-        <p>
-            Default Password: admin123
-        </p>
+        <p>Default Username: admin</p>
+        <p>Default Password: admin123</p>
         """)
 
-    # Login form
     return """
     <h1>Login</h1>
 
     <form method="POST">
-
         <input
             type="text"
             name="username"
             placeholder="Username"
         >
-
         <br><br>
 
         <input
@@ -137,42 +89,28 @@ def login():
             name="password"
             placeholder="Password"
         >
-
         <br><br>
 
-        <button type="submit">
-            Login
-        </button>
-
+        <button type="submit">Login</button>
     </form>
 
-    <p>
-        Default Username: admin
-    </p>
+    <p>Default Username: admin</p>
+    <p>Default Password: admin123</p>
 
-    <p>
-        Default Password: admin123
-    </p>
+    <br>
+    <a href="/about">About</a>
     """
 
 
-# ==========================================
-# Products Page
-# ==========================================
-
 @app.route("/products")
 def products():
-
-    # User must be logged in
     if "username" not in session:
         return redirect("/login")
 
     return render_template_string("""
     <h1>Products</h1>
 
-    <p>
-        Welcome, {{ username }}!
-    </p>
+    <p>Welcome, {{ username }}!</p>
 
     <hr>
 
@@ -189,10 +127,11 @@ def products():
 
     <br>
 
+    <a href="/about">About</a>
+    <br><br>
+
     <a href="/logout">
-        <button>
-            Logout
-        </button>
+        <button>Logout</button>
     </a>
     """,
     username=session["username"],
@@ -201,21 +140,61 @@ def products():
 
 
 # ==========================================
-# Logout
+# About Page
 # ==========================================
+
+@app.route("/about")
+def about():
+    return """
+    <h1>About QA Demo Store</h1>
+
+    <p>
+        QA Demo Store is a simple web application created
+        for learning and practicing software quality assurance
+        and CI/CD automation.
+    </p>
+
+    <h2>Application Features</h2>
+
+    <ul>
+        <li>User Login</li>
+        <li>Product Listing</li>
+        <li>Logout</li>
+        <li>Session-based Authentication</li>
+        <li>Automated QA Testing</li>
+        <li>CI/CD Pipeline Integration</li>
+    </ul>
+
+    <h2>Technology</h2>
+
+    <ul>
+        <li>Python</li>
+        <li>Flask</li>
+        <li>Playwright</li>
+        <li>Pytest</li>
+        <li>GitHub Actions</li>
+        <li>Vercel</li>
+    </ul>
+
+    <p>
+        This application is intended for QA learning,
+        automation practice, and CI/CD demonstration.
+    </p>
+
+    <br>
+
+    <a href="/">Home</a>
+    <br><br>
+
+    <a href="/login">Login</a>
+    """
+
 
 @app.route("/logout")
 def logout():
-
-    # Remove login session
     session.clear()
-
     return redirect("/login")
 
-
-# ==========================================
-# Run Application
-# ==========================================
 
 if __name__ == "__main__":
     app.run(
@@ -223,3 +202,4 @@ if __name__ == "__main__":
         port=5000,
         debug=True
     )
+
