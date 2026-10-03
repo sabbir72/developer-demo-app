@@ -1,91 +1,42 @@
-name: Developer Build and Deploy
+deploy:
+  name: Deploy to Vercel
+  needs: build
+  runs-on: ubuntu-latest
 
-on:
-  push:
-    branches:
-      - main
+  steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
 
-  workflow_dispatch:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
 
-jobs:
-  build:
-    name: Build Application
-    runs-on: ubuntu-latest
+    - name: Install Vercel CLI
+      run: npm install --global vercel@latest
 
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
+    - name: Link Vercel Project
+      run: |
+        vercel link \
+          --yes \
+          --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+    - name: Pull Vercel project
+      run: |
+        vercel pull \
+          --yes \
+          --environment=production \
+          --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Build Vercel application
+      run: |
+        vercel build \
+          --prod \
+          --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Validate Python application
-        run: |
-          python -m compileall .
-          python -c "import flask; print('Flask import successful')"
-
-  deploy:
-    name: Deploy to Vercel
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Vercel CLI
-        run: npm install --global vercel@latest
-
-      - name: Pull Vercel project
-        run: |
-          vercel pull \
-            --yes \
-            --environment=production \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build Vercel application
-        run: |
-          vercel build \
-            --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Deploy to Vercel
-        run: |
-          vercel deploy \
-            --prebuilt \
-            --prod \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-  trigger-qa:
-    name: Trigger QA Automation
-    needs: deploy
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Trigger QA repository
-        uses: peter-evans/repository-dispatch@v4
-        with:
-          token: ${{ secrets.QA_REPO_TOKEN }}
-          repository: https://github.com/sabbir72/qa-cicd-learning.git
-          event-type: run-qa-tests
-          client-payload: |
-            {
-              "base_url": "https://developer-demo-app.vercel.app/",
-              "source_repo": "${{ github.repository }}",
-              "commit_sha": "${{ github.sha }}",
-              "branch": "${{ github.ref_name }}"
-            }
-
-#update the base_url to your deployed application URL
+    - name: Deploy to Vercel
+      run: |
+        vercel deploy \
+          --prebuilt \
+          --prod \
+          --token=${{ secrets.VERCEL_TOKEN }}
