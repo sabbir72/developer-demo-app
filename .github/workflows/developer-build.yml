@@ -48,3 +48,4 @@ jobs:
       - name: Check Vercel Authentication
         run: |
           vercel whoami --token=${{ secrets.VERCEL_TOKEN }}
+    #partial: true
