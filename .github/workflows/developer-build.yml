@@ -9,7 +9,7 @@ on:
 
 jobs:
   # ==========================================
-  # PART 1: Build Application
+  # 1. BUILD APPLICATION
   # ==========================================
   build:
     name: Build Application
@@ -35,7 +35,7 @@ jobs:
           python -c "import flask; print('Flask import successful')"
 
   # ==========================================
-  # PART 5: Pull Vercel Project
+  # 2. VERCEL PULL
   # ==========================================
   vercel-pull:
     name: Pull Vercel Project
@@ -65,9 +65,8 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-        # ==========================================
-    # ==========================================
-  # PART 6: Build Vercel Application
+  # ==========================================
+  # 3. VERCEL BUILD
   # ==========================================
   vercel-build:
     name: Build Vercel Application
@@ -83,10 +82,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      # FIX: Vercel Python build requires uv
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "latest"
+
+      - name: Verify uv
+        run: |
+          uv --version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -115,52 +119,77 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
   # ==========================================
-  # PART 7: Deploy to Vercel
+  # 4. VERCEL DEPLOY
   # ==========================================
-     vercel-build:
-      name: Build Vercel Application
-      needs: vercel-pull
-      runs-on: ubuntu-latest
+  vercel-deploy:
+    name: Deploy to Vercel
+    needs: vercel-build
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: Checkout source code
-          uses: actions/checkout@v4
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-        - name: Setup Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: "3.12"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-        - name: Install uv
-          uses: astral-sh/setup-uv@v7
-          with:
-            version: "latest"
+      - name: Install Vercel CLI
+        run: |
+          npm install --global vercel@latest
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: "20"
+      - name: Pull Vercel Project
+        run: |
+          vercel pull \
+            --yes \
+            --environment=production \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-        - name: Install Vercel CLI
-          run: |
-            npm install --global vercel@latest
+      - name: Build Vercel Application
+        run: |
+          vercel build \
+            --prod \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-        - name: Pull Vercel Project
-          run: |
-            vercel pull \
-              --yes \
-              --environment=production \
-              --token=${{ secrets.VERCEL_TOKEN }}
-          env:
-            VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-            VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy to Vercel
+        run: |
+          vercel deploy \
+            --prebuilt \
+            --prod \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-        - name: Build Vercel Application
-          run: |
-            vercel build \
-              --prod \
-              --token=${{ secrets.VERCEL_TOKEN }}
-          env:
-            VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-            VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  # ==========================================
+  # 5. TRIGGER QA AUTOMATION
+  # ==========================================
+  # trigger-qa:
+  #   name: Trigger QA Automation
+  #   needs: vercel-deploy
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Trigger QA Repository
+  #       uses: peter-evans/repository-dispatch@v4
+  #       with:
+  #         token: ${{ secrets.QA_REPO_TOKEN }}
+  #         repository: sabbir72/qa-cicd-learning
+  #         event-type: run-qa-tests
+
+  #         client-payload: |
+  #           {
+  #             "base_url": "https://developer-demo-app.vercel.app/",
+  #             "source_repo": "${{ github.repository }}",
+  #             "commit_sha": "${{ github.sha }}",
+  #             "branch": "${{ github.ref_name }}"
+  #           }
